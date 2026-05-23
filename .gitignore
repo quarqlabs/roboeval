@@ -1,0 +1,14 @@
+.DS_Store
+__pycache__/
+*.pyc
+.pytest_cache/
+.mypy_cache/
+.ruff_cache/
+build/
+dist/
+*.egg-info/
+runs/
+
+# Kept locally for now; not part of the first SDK push.
+examples/
+old_robot/
