@@ -73,13 +73,20 @@ def load_scenarios_csv(path: str | Path) -> list[Scenario]:
             name = row.pop("name")
             max_steps = int(row.pop("max_steps", "10"))
             required_forward_steps = int(row.pop("required_forward_steps", "2"))
+            scenario_type = row.pop("scenario_type", "")
+            raw_tags = row.pop("tags", "")
+            metadata: dict[str, Any] = {"required_forward_steps": required_forward_steps}
+            if scenario_type:
+                metadata["scenario_type"] = scenario_type
+            if raw_tags:
+                metadata["tags"] = [tag.strip() for tag in raw_tags.split("|") if tag.strip()]
             initial_state = {key: _parse_value(value) for key, value in row.items() if value != ""}
             scenarios.append(
                 Scenario(
                     name=name,
                     initial_state=initial_state,
                     max_steps=max_steps,
-                    metadata={"required_forward_steps": required_forward_steps},
+                    metadata=metadata,
                 )
             )
     return scenarios

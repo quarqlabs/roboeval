@@ -1,7 +1,7 @@
 from __future__ import annotations
 
 from dataclasses import dataclass
-from typing import Any
+from typing import Protocol
 
 from .core import Scenario, State
 
@@ -12,6 +12,18 @@ class StepOutcome:
     outcome: str
     failure_label: str
     terminal: bool
+
+
+class EnvironmentAdapter(Protocol):
+    """Protocol every user-provided robot environment should implement."""
+
+    def reset(self, scenario: Scenario) -> State:
+        """Reset the environment for one scenario and return the first state."""
+        ...
+
+    def step(self, action: str, scenario: Scenario) -> StepOutcome:
+        """Apply one policy action and return the resulting transition."""
+        ...
 
 
 class DemoRobotEnvironment:

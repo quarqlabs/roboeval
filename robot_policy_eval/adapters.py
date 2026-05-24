@@ -7,6 +7,9 @@ from typing import Any, Callable
 from .core import Decision, State
 
 
+STANDARD_DEBUG_FIELDS = ("scores", "probabilities", "logits", "confidence", "model_version")
+
+
 @dataclass(frozen=True)
 class PolicyAdapter:
     name: str
@@ -58,8 +61,9 @@ def _normalize_decision(raw: Any) -> Decision:
         if "action" not in raw:
             raise ValueError("Policy decision dict must include an 'action' key.")
         debug_info = dict(raw.get("debug_info", {}))
-        if "scores" in raw:
-            debug_info["scores"] = raw["scores"]
+        for field in STANDARD_DEBUG_FIELDS:
+            if field in raw and field not in debug_info:
+                debug_info[field] = raw[field]
         return Decision(action=str(raw["action"]), debug_info=debug_info)
     raise TypeError(f"Unsupported policy decision shape: {type(raw).__name__}")
 

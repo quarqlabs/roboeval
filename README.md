@@ -4,7 +4,7 @@
 
 The SDK is designed for teams that already have their own policies, scenarios, simulators, and robot repositories. Version 1 focuses on the local workflow: plug in policies, define scenarios and success criteria, run evals, and get structured results back.
 
-This repository currently contains the SDK core only. Demo examples are being kept local for now and will be published later.
+This repository currently contains the SDK core and v1 docs. Demo examples and expanded tests are being kept local for now.
 
 ## Why This Exists
 
@@ -37,9 +37,14 @@ Included:
 - importable Python SDK
 - local CLI
 - policy adapter interface
+- environment adapter interface
 - scenario and success-criteria models
 - deterministic eval runner
 - state/action/outcome decision logs
+- transition logs with next state and terminal markers
+- structured rule-level pass/fail results
+- baseline action divergence detection
+- scenario grouped metrics
 - policy-version comparison
 - regression and failure-case detection
 - JSONL, JSON, and Markdown report outputs
@@ -51,6 +56,15 @@ Not included yet:
 - Isaac/Gazebo/MuJoCo/ROS2 adapters
 - real robot capture integrations
 - public demo example package
+
+## SDK v1 Docs
+
+- [Overview](docs/v1/overview.md)
+- [Environment Adapter](docs/v1/environment-adapter.md)
+- [Policy Adapter](docs/v1/policy-adapter.md)
+- [Reports](docs/v1/reports.md)
+- [Adapter Guide In 20 Lines](docs/v1/adapter-guide-20-lines.md)
+- [Clean Demo Flow](docs/v1/demo-flow.md)
 
 ## Install Locally
 
@@ -71,7 +85,11 @@ def policy_v1(state):
 
 
 def policy_v2(state):
-    return {"action": "turn_right", "debug_info": {"version": "policy_v2"}}
+    return {
+        "action": "turn_right",
+        "probabilities": {"turn_right": 0.8, "move_forward": 0.2},
+        "model_version": "policy_v2",
+    }
 
 
 scenarios = [
@@ -86,7 +104,7 @@ scenarios = [
             "step_count": 0,
         },
         max_steps=6,
-        metadata={"required_forward_steps": 2},
+        metadata={"required_forward_steps": 2, "scenario_type": "navigation", "tags": ["smoke"]},
     )
 ]
 
@@ -98,6 +116,27 @@ report = EvalRunner(
 ).run()
 
 report.save("runs/latest")
+```
+
+## Custom Rules
+
+`SuccessCriteria` includes built-in checks for goal reached, collision, stuck, and unsafe forward actions. You can add custom rules when your policy has domain-specific constraints.
+
+```python
+from robot_policy_eval import RuleResult, SuccessCriteria
+
+
+def max_three_steps(logs, terminal_outcome):
+    passed = len(logs) <= 3
+    return RuleResult(
+        name="max_three_steps",
+        passed=passed,
+        reason="" if passed else "episode took more than 3 steps",
+        step=3 if not passed else None,
+    )
+
+
+criteria = SuccessCriteria(custom_rules=[max_three_steps])
 ```
 
 ## CLI Usage
@@ -133,22 +172,40 @@ runs/latest/report.md
 - step
 - state
 - action
+- next state
 - outcome
 - failure label
+- terminal marker
 - policy debug info
 
 `comparison_report.json` contains:
 
+- run metadata: SDK version, timestamp, baseline, policies, scenario count, and environment name
 - policy summaries
 - success rates
 - failure counts
 - collision/stuck/unsafe-action counts
 - average steps
+- rule results per episode
+- first failure step
 - improvements against baseline
 - regressions against baseline
 - failure cases
+- first action divergences against baseline
+- grouped metrics by `scenario_type` and `tags`
+- human-readable highlights
 
-`report.md` is the human-readable summary.
+`report.md` is the human-readable summary. It includes run metadata, highlights, policy summaries, regressions, improvements, failure explanations, action divergences, and scenario groups.
+
+Policy debug info can include standard ML fields such as:
+
+- `scores`
+- `probabilities`
+- `logits`
+- `confidence`
+- `model_version`
+
+These are preserved in decision logs and failure cases so trained-model behavior is easier to inspect.
 
 ## Development
 
