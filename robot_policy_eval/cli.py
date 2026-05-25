@@ -21,7 +21,9 @@ def main() -> None:
             policies=config.policies,
             scenarios=config.scenarios,
             success_criteria=config.success_criteria,
+            ruleset=config.ruleset,
             baseline_policy=config.baseline_policy,
+            environment=config.environment,
         ).run()
         report.save(args.output_dir)
         print(f"Eval complete. Report: {args.output_dir}/report.md")

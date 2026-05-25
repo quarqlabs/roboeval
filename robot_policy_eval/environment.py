@@ -1,9 +1,9 @@
 from __future__ import annotations
 
 from dataclasses import dataclass
-from typing import Protocol
+from typing import Callable, Protocol
 
-from .core import Scenario, State
+from .core import Action, Scenario, State
 
 
 @dataclass
@@ -12,6 +12,10 @@ class StepOutcome:
     outcome: str
     failure_label: str
     terminal: bool
+    metrics: dict[str, float | int] | None = None
+    events: list[str] | None = None
+    artifacts: dict[str, object] | None = None
+    info: dict[str, object] | None = None
 
 
 class EnvironmentAdapter(Protocol):
@@ -21,9 +25,24 @@ class EnvironmentAdapter(Protocol):
         """Reset the environment for one scenario and return the first state."""
         ...
 
-    def step(self, action: str, scenario: Scenario) -> StepOutcome:
+    def step(self, action: Action, scenario: Scenario) -> StepOutcome:
         """Apply one policy action and return the resulting transition."""
         ...
+
+
+@dataclass
+class CallableEnvironmentAdapter:
+    """Wrap reset and step callables as an EnvironmentAdapter."""
+
+    reset_fn: Callable[[Scenario], State]
+    step_fn: Callable[[Action, Scenario], StepOutcome]
+    name: str = "callable_environment"
+
+    def reset(self, scenario: Scenario) -> State:
+        return self.reset_fn(scenario)
+
+    def step(self, action: Action, scenario: Scenario) -> StepOutcome:
+        return self.step_fn(action, scenario)
 
 
 class DemoRobotEnvironment:
@@ -41,7 +60,7 @@ class DemoRobotEnvironment:
         self._no_progress_steps = 0
         return dict(self._state)
 
-    def step(self, action: str, scenario: Scenario) -> StepOutcome:
+    def step(self, action: Action, scenario: Scenario) -> StepOutcome:
         state = dict(self._state)
         required_forward_steps = int(scenario.metadata.get("required_forward_steps", 2))
         step_count = int(state.get("step_count", 0)) + 1
@@ -127,7 +146,7 @@ class DemoRobotEnvironment:
         return StepOutcome(dict(self._state), "no_progress", "", False)
 
 
-def _next_state(state: State, action: str, front_delta: float, goal_direction: str, step_count: int) -> State:
+def _next_state(state: State, action: Action, front_delta: float, goal_direction: str, step_count: int) -> State:
     return {
         **state,
         "front_distance": max(float(state["front_distance"]) + front_delta, 0),

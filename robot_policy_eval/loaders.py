@@ -7,15 +7,18 @@ from pathlib import Path
 from typing import Any
 
 from .adapters import PolicyAdapter, load_object, load_policy
-from .core import Scenario, SuccessCriteria
+from .core import Rule, Ruleset, Scenario, SuccessCriteria, custom_rule
+from .environment import EnvironmentAdapter
 
 
 @dataclass(frozen=True)
 class EvalConfig:
     policies: list[PolicyAdapter]
     scenarios: list[Scenario]
-    success_criteria: SuccessCriteria
+    success_criteria: SuccessCriteria | None
+    ruleset: Ruleset | None
     baseline_policy: str
+    environment: EnvironmentAdapter | None = None
 
 
 def load_eval_config(config_path: str | Path) -> EvalConfig:
@@ -40,17 +43,25 @@ def load_eval_config(config_path: str | Path) -> EvalConfig:
         else:
             raise ValueError(f"Unsupported scenario source type: {source_type}")
 
+    ruleset_source = data.get("ruleset")
     criteria_path = data.get("success_criteria")
-    if criteria_path:
+    if ruleset_source:
+        ruleset = load_ruleset(_resolve_config_value(base_dir, ruleset_source))
+        success_criteria = None
+    elif criteria_path:
+        ruleset = None
         success_criteria = load_success_criteria_json(_resolve(base_dir, criteria_path))
     else:
+        ruleset = None
         success_criteria = SuccessCriteria()
 
     return EvalConfig(
         policies=policies,
         scenarios=scenarios,
         success_criteria=success_criteria,
+        ruleset=ruleset,
         baseline_policy=data.get("baseline_policy", policies[0].name),
+        environment=load_environment(data["environment"]) if "environment" in data else None,
     )
 
 
@@ -96,6 +107,44 @@ def load_success_criteria_json(path: str | Path) -> SuccessCriteria:
     return SuccessCriteria.from_mapping(json.loads(Path(path).read_text(encoding="utf-8")))
 
 
+def load_ruleset(source: str | Path | dict[str, Any]) -> Ruleset:
+    if isinstance(source, dict):
+        return _load_ruleset_mapping(source)
+    data = json.loads(Path(source).read_text(encoding="utf-8"))
+    return _load_ruleset_mapping(data)
+
+
+def load_environment(data: dict[str, Any]) -> EnvironmentAdapter:
+    env_obj = load_object(data["path"])
+    kwargs = dict(data.get("kwargs", {}))
+    if isinstance(env_obj, type):
+        environment = env_obj(**kwargs)
+    elif _looks_like_environment(env_obj):
+        if kwargs:
+            raise ValueError("Environment kwargs can only be used with a class or factory function.")
+        environment = env_obj
+    elif callable(env_obj):
+        environment = env_obj(**kwargs)
+    else:
+        raise TypeError(f"Environment {data['path']!r} is not an instance, class, or factory function.")
+    if not _looks_like_environment(environment):
+        raise TypeError(f"Environment {data['path']!r} must provide reset() and step() methods.")
+    return environment
+
+
+def _load_ruleset_mapping(data: dict[str, Any]) -> Ruleset:
+    rules: list[Rule] = []
+    for rule_data in data.get("rules", []):
+        if rule_data.get("type") == "custom":
+            rule = load_object(rule_data["path"])
+            if not callable(rule):
+                raise TypeError(f"Custom rule {rule_data['path']!r} is not callable.")
+            rules.append(custom_rule(rule, name=rule_data.get("name")))
+        else:
+            rules.extend(Ruleset.from_mapping({"rules": [rule_data]}).rules)
+    return Ruleset(rules)
+
+
 def _normalize_scenario(raw: Any) -> Scenario:
     if isinstance(raw, Scenario):
         return raw
@@ -107,6 +156,16 @@ def _normalize_scenario(raw: Any) -> Scenario:
 def _resolve(base_dir: Path, raw_path: str) -> Path:
     path = Path(raw_path)
     return path if path.is_absolute() else base_dir / path
+
+
+def _resolve_config_value(base_dir: Path, value: Any) -> Any:
+    if isinstance(value, str):
+        return _resolve(base_dir, value)
+    return value
+
+
+def _looks_like_environment(value: Any) -> bool:
+    return callable(getattr(value, "reset", None)) and callable(getattr(value, "step", None))
 
 
 def _parse_value(value: str) -> Any:

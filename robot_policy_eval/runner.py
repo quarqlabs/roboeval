@@ -5,7 +5,23 @@ from datetime import datetime, timezone
 from typing import Any, Iterable
 
 from .adapters import PolicyAdapter, PolicyLike, normalize_policy
-from .core import SDK_NAME, SDK_VERSION, EpisodeResult, EvalReport, Scenario, StepRecord, SuccessCriteria
+from .core import (
+    SDK_NAME,
+    SDK_VERSION,
+    Action,
+    ActionValidator,
+    EpisodeContext,
+    EpisodeResult,
+    EvalReport,
+    Ruleset,
+    Scenario,
+    StateValidator,
+    StepRecord,
+    SuccessCriteria,
+    action_key,
+    display_value,
+    to_serializable,
+)
 from .environment import DemoRobotEnvironment, EnvironmentAdapter
 
 
@@ -15,15 +31,28 @@ class EvalRunner:
         policies: Iterable[PolicyLike],
         scenarios: Iterable[Scenario],
         success_criteria: SuccessCriteria | None = None,
+        ruleset: Ruleset | None = None,
         baseline_policy: str | None = None,
         environment: EnvironmentAdapter | None = None,
+        allowed_actions: Iterable[Action] | None = None,
+        required_state_keys: Iterable[str] | None = None,
+        state_validator: StateValidator | None = None,
+        action_validator: ActionValidator | None = None,
     ) -> None:
+        if ruleset is not None and success_criteria is not None:
+            raise ValueError("Provide either ruleset or success_criteria, not both.")
         self.policies = [normalize_policy(policy) for policy in policies]
         self.scenarios = list(scenarios)
-        self.success_criteria = success_criteria or SuccessCriteria()
+        self.success_criteria = success_criteria
+        self.ruleset = ruleset or (success_criteria or SuccessCriteria()).to_ruleset()
         self.baseline_policy = baseline_policy or self.policies[0].name
         self.environment = environment or DemoRobotEnvironment()
         self.environment_name = _environment_name(self.environment)
+        self.allowed_actions = list(allowed_actions or [])
+        self.allowed_action_keys = {action_key(action) for action in self.allowed_actions}
+        self.required_state_keys = set(required_state_keys or [])
+        self.state_validator = state_validator
+        self.action_validator = action_validator
         _validate_runner_inputs(self.policies, self.scenarios, self.baseline_policy)
 
     def run(self) -> EvalReport:
@@ -38,13 +67,16 @@ class EvalRunner:
         state = self.environment.reset(scenario)
         if not isinstance(state, dict):
             raise TypeError("Environment reset() must return a state dict.")
+        self._validate_state(state, scenario.name)
         logs: list[StepRecord] = []
         terminal_outcome = "max_steps_reached"
 
         for step in range(scenario.max_steps):
             decision = policy.decide(state)
+            self._validate_action(decision.action, policy.name)
             step_outcome = self.environment.step(decision.action, scenario)
             _validate_step_outcome(step_outcome)
+            self._validate_state(step_outcome.next_state, scenario.name)
             logs.append(
                 StepRecord(
                     episode_id=episode_id,
@@ -58,6 +90,10 @@ class EvalRunner:
                     next_state=dict(step_outcome.next_state),
                     is_terminal=bool(step_outcome.terminal),
                     debug_info=decision.debug_info,
+                    metrics=dict(step_outcome.metrics or {}),
+                    events=list(step_outcome.events or []),
+                    artifacts=dict(step_outcome.artifacts or {}),
+                    info=dict(step_outcome.info or {}),
                 )
             )
             state = step_outcome.next_state
@@ -65,7 +101,14 @@ class EvalRunner:
                 terminal_outcome = step_outcome.outcome
                 break
 
-        rule_results = self.success_criteria.evaluate_rules(logs, terminal_outcome)
+        context = EpisodeContext(
+            episode_id=episode_id,
+            scenario=scenario,
+            policy_version=policy.name,
+            logs=logs,
+            terminal_outcome=terminal_outcome,
+        )
+        rule_results = self.ruleset.evaluate(context)
         first_failure = next((result for result in rule_results if not result.passed), None)
         success = first_failure is None
         failure_label = "" if success else first_failure.name
@@ -82,6 +125,21 @@ class EvalRunner:
             first_failure_step=first_failure.step if first_failure else None,
             scenario_metadata=dict(scenario.metadata),
         )
+
+    def _validate_state(self, state: dict[str, Any], scenario_name: str) -> None:
+        missing_keys = sorted(key for key in self.required_state_keys if key not in state)
+        if missing_keys:
+            raise ValueError(f"Scenario {scenario_name!r} state is missing required keys: {missing_keys}")
+        if self.state_validator:
+            _validate_callback_result(self.state_validator(state), "state_validator")
+
+    def _validate_action(self, action: Action, policy_name: str) -> None:
+        if self.allowed_action_keys and action_key(action) not in self.allowed_action_keys:
+            raise ValueError(
+                f"Policy {policy_name!r} returned action {display_value(action)!r}, not in allowed actions."
+            )
+        if self.action_validator:
+            _validate_callback_result(self.action_validator(action), "action_validator")
 
 
 def _build_report(episodes: list[EpisodeResult], baseline_policy: str, environment_name: str) -> EvalReport:
@@ -143,6 +201,9 @@ def _build_report(episodes: list[EpisodeResult], baseline_policy: str, environme
         failure_cases=failure_cases,
         grouped_metrics=_grouped_metrics(episodes),
         action_divergences=action_divergences,
+        failure_counts=_failure_counts(episodes),
+        outcome_counts=_outcome_counts(episodes),
+        metric_summary=_metric_summary(episodes),
         metadata=_run_metadata(episodes, baseline_policy, environment_name),
         highlights=_build_highlights(improvements, regressions, failure_cases, action_divergences, by_scenario),
     )
@@ -197,22 +258,20 @@ def _build_highlights(
         policy_version = str(failure["policy_version"])
         scenario_name = str(failure["scenario_name"])
         failure_label = str(failure["failure_label"])
-        if failure_label == "unsafe_forward_action":
-            highlights.append(f"{policy_version} moved forward unsafely on {scenario_name} at step {step}.")
+        action = display_value(failure.get("failure_action", ""))
+        outcome = str(failure.get("failure_outcome", ""))
+        if action:
+            highlights.append(
+                f"{policy_version} failed {scenario_name} on rule {failure_label} at step {step}; action={action}, outcome={outcome}."
+            )
         else:
-            action = str(failure.get("failure_action", ""))
-            if action:
-                highlights.append(
-                    f"{policy_version} {_past_action(action)} on {scenario_name} and failed with {failure_label} at step {step}."
-                )
-            else:
-                highlights.append(f"{policy_version} failed {scenario_name} with {failure_label} at step {step}.")
+            highlights.append(f"{policy_version} failed {scenario_name} on rule {failure_label} at step {step}.")
 
     for divergence in action_divergences[:10]:
         highlights.append(
-            "{policy_version} chose {candidate_action} while baseline {baseline_policy} chose {baseline_action} on {scenario_name} at step {step}.".format(
-                **divergence
-            )
+            f"{divergence['policy_version']} chose {display_value(divergence['candidate_action'])} while baseline "
+            f"{divergence['baseline_policy']} chose {display_value(divergence['baseline_action'])} on "
+            f"{divergence['scenario_name']} at step {divergence['step']}."
         )
 
     return highlights
@@ -231,24 +290,56 @@ def _summarize(episodes: list[EpisodeResult]) -> dict[str, float | int]:
     }
 
 
+def _failure_counts(episodes: list[EpisodeResult]) -> dict[str, dict[str, int]]:
+    counts: dict[str, dict[str, int]] = defaultdict(lambda: defaultdict(int))
+    for episode in episodes:
+        for log in episode.logs:
+            if log.failure_label:
+                counts[episode.policy_version][log.failure_label] += 1
+        if not episode.success and episode.failure_label:
+            counts[episode.policy_version][episode.failure_label] += 0
+    return {policy: dict(policy_counts) for policy, policy_counts in counts.items()}
+
+
+def _outcome_counts(episodes: list[EpisodeResult]) -> dict[str, dict[str, int]]:
+    counts: dict[str, dict[str, int]] = defaultdict(lambda: defaultdict(int))
+    for episode in episodes:
+        for log in episode.logs:
+            if log.outcome:
+                counts[episode.policy_version][log.outcome] += 1
+    return {policy: dict(policy_counts) for policy, policy_counts in counts.items()}
+
+
+def _metric_summary(episodes: list[EpisodeResult]) -> dict[str, dict[str, dict[str, float | int]]]:
+    values_by_policy: dict[str, dict[str, list[float]]] = defaultdict(lambda: defaultdict(list))
+    last_by_policy: dict[str, dict[str, float]] = defaultdict(dict)
+    for episode in episodes:
+        for log in episode.logs:
+            for metric_name, raw_value in log.metrics.items():
+                if isinstance(raw_value, bool) or not isinstance(raw_value, (int, float)):
+                    continue
+                value = float(raw_value)
+                values_by_policy[episode.policy_version][metric_name].append(value)
+                last_by_policy[episode.policy_version][metric_name] = value
+    return {
+        policy: {
+            metric_name: {
+                "min": round(min(values), 4),
+                "max": round(max(values), 4),
+                "avg": round(sum(values) / len(values), 4),
+                "last": round(last_by_policy[policy][metric_name], 4),
+            }
+            for metric_name, values in metric_values.items()
+        }
+        for policy, metric_values in values_by_policy.items()
+    }
+
+
 def _episode_story(episode: EpisodeResult) -> str:
-    phrases: list[str] = []
-    for log in episode.logs:
-        if log.action == "reverse":
-            phrases.append("reversed")
-        if log.outcome == "escape_reverse":
-            phrases.append("escaped")
-        if log.outcome == "aligned_turn":
-            phrases.append("aligned with the goal")
-        if log.failure_label == "collision":
-            phrases.append("collided")
-        if log.failure_label == "stuck":
-            phrases.append("got stuck")
-    if episode.terminal_outcome == "goal_reached":
-        phrases.append("reached goal")
-    elif not phrases:
-        phrases.append(f"ended with {episode.terminal_outcome}")
-    return _join_story(_dedupe(phrases))
+    outcomes = _dedupe_consecutive(episode.outcome_trace)
+    if outcomes:
+        return f"outcome trace: {_join_trace(outcomes)}"
+    return f"ended with {episode.terminal_outcome}"
 
 
 def _dedupe(values: list[str]) -> list[str]:
@@ -261,24 +352,18 @@ def _dedupe(values: list[str]) -> list[str]:
     return deduped
 
 
-def _join_story(phrases: list[str]) -> str:
-    if not phrases:
+def _dedupe_consecutive(values: list[str]) -> list[str]:
+    deduped: list[str] = []
+    for value in values:
+        if not deduped or deduped[-1] != value:
+            deduped.append(value)
+    return deduped
+
+
+def _join_trace(values: list[str]) -> str:
+    if not values:
         return ""
-    if len(phrases) == 1:
-        return phrases[0]
-    if len(phrases) == 2:
-        return f"{phrases[0]}, then {phrases[1]}"
-    return f"{', '.join(phrases[:-1])}, then {phrases[-1]}"
-
-
-def _past_action(action: str) -> str:
-    return {
-        "move_forward": "moved forward",
-        "turn_left": "turned left",
-        "turn_right": "turned right",
-        "stop": "stopped",
-        "reverse": "reversed",
-    }.get(action, f"took action {action}")
+    return " -> ".join(values)
 
 
 def _failure_case(episode: EpisodeResult) -> dict[str, object]:
@@ -294,13 +379,18 @@ def _failure_case(episode: EpisodeResult) -> dict[str, object]:
         "steps": episode.steps,
         "first_failure_step": episode.first_failure_step,
         "failed_rules": failed_rules,
-        "failure_state": failure_log.state if failure_log else {},
-        "failure_next_state": failure_log.next_state if failure_log else {},
+        "failure_state": to_serializable(failure_log.state) if failure_log else {},
+        "failure_next_state": to_serializable(failure_log.next_state) if failure_log else {},
         "failure_action": failure_log.action if failure_log else "",
-        "last_state": last_log.state if last_log else {},
-        "last_next_state": last_log.next_state if last_log else {},
+        "failure_outcome": failure_log.outcome if failure_log else "",
+        "failure_metrics": to_serializable(failure_log.metrics) if failure_log else {},
+        "failure_events": to_serializable(failure_log.events) if failure_log else [],
+        "outcome_trace": to_serializable(episode.outcome_trace),
+        "action_trace": to_serializable(episode.action_trace),
+        "last_state": to_serializable(last_log.state) if last_log else {},
+        "last_next_state": to_serializable(last_log.next_state) if last_log else {},
         "last_action": last_log.action if last_log else "",
-        "debug_info": failure_log.debug_info if failure_log else {},
+        "debug_info": to_serializable(failure_log.debug_info) if failure_log else {},
     }
 
 
@@ -329,19 +419,21 @@ def _first_action_divergence(baseline: EpisodeResult, candidate: EpisodeResult) 
         candidate_log = candidate.logs[index] if index < len(candidate.logs) else None
         baseline_action = baseline_log.action if baseline_log else "<ended>"
         candidate_action = candidate_log.action if candidate_log else "<ended>"
-        if baseline_action != candidate_action:
+        if action_key(baseline_action) != action_key(candidate_action):
             reference_log = candidate_log or baseline_log
             return {
                 "baseline_policy": baseline.policy_version,
                 "policy_version": candidate.policy_version,
                 "step": index,
-                "baseline_action": baseline_action,
-                "candidate_action": candidate_action,
-                "state": reference_log.state if reference_log else {},
+                "baseline_action": to_serializable(baseline_action),
+                "candidate_action": to_serializable(candidate_action),
+                "baseline_action_key": action_key(baseline_action),
+                "candidate_action_key": action_key(candidate_action),
+                "state": to_serializable(reference_log.state) if reference_log else {},
                 "candidate_outcome": candidate_log.outcome if candidate_log else "<ended>",
                 "baseline_outcome": baseline_log.outcome if baseline_log else "<ended>",
-                "candidate_debug_info": candidate_log.debug_info if candidate_log else {},
-                "baseline_debug_info": baseline_log.debug_info if baseline_log else {},
+                "candidate_debug_info": to_serializable(candidate_log.debug_info) if candidate_log else {},
+                "baseline_debug_info": to_serializable(baseline_log.debug_info) if baseline_log else {},
             }
     return None
 
@@ -401,8 +493,21 @@ def _validate_step_outcome(step_outcome: Any) -> None:
             raise TypeError(f"Environment step() result is missing required attribute {attr!r}.")
     if not isinstance(step_outcome.next_state, dict):
         raise TypeError("Environment step() result next_state must be a dict.")
+    for attr in ("metrics", "artifacts", "info"):
+        value = getattr(step_outcome, attr, None)
+        if value is not None and not isinstance(value, dict):
+            raise TypeError(f"Environment step() result {attr} must be a dict when provided.")
+    if getattr(step_outcome, "events", None) is not None and not isinstance(step_outcome.events, list):
+        raise TypeError("Environment step() result events must be a list when provided.")
 
 
 def _environment_name(environment: EnvironmentAdapter) -> str:
     name = getattr(environment, "name", None)
     return str(name) if name else environment.__class__.__name__
+
+
+def _validate_callback_result(result: bool | str | None, callback_name: str) -> None:
+    if result is False:
+        raise ValueError(f"{callback_name} rejected the value.")
+    if isinstance(result, str) and result:
+        raise ValueError(result)

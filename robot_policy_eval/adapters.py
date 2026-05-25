@@ -52,20 +52,16 @@ def load_policy(import_path: str, name: str | None = None) -> PolicyAdapter:
 def _normalize_decision(raw: Any) -> Decision:
     if isinstance(raw, Decision):
         return raw
-    if isinstance(raw, str):
-        return Decision(action=raw)
-    if isinstance(raw, tuple) and len(raw) == 2:
+    if isinstance(raw, tuple) and len(raw) == 2 and (raw[1] is None or isinstance(raw[1], dict)):
         action, debug_info = raw
-        return Decision(action=str(action), debug_info=dict(debug_info or {}))
-    if isinstance(raw, dict):
-        if "action" not in raw:
-            raise ValueError("Policy decision dict must include an 'action' key.")
+        return Decision(action=action, debug_info=dict(debug_info or {}))
+    if isinstance(raw, dict) and "action" in raw:
         debug_info = dict(raw.get("debug_info", {}))
         for field in STANDARD_DEBUG_FIELDS:
             if field in raw and field not in debug_info:
                 debug_info[field] = raw[field]
-        return Decision(action=str(raw["action"]), debug_info=debug_info)
-    raise TypeError(f"Unsupported policy decision shape: {type(raw).__name__}")
+        return Decision(action=raw["action"], debug_info=debug_info)
+    return Decision(action=raw)
 
 
 PolicyLike = Callable[[State], Any] | PolicyAdapter
