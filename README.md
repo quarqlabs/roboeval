@@ -4,7 +4,7 @@
 
 The SDK is designed for teams that already have their own policies, scenarios, simulators, and robot repositories. Version 1 focuses on the local workflow: plug in policies, define scenarios and success criteria, run evals, and get structured results back.
 
-This repository currently contains the SDK core and v1 docs. Demo examples and expanded tests are being kept local for now.
+This repository contains the SDK core, v1 docs, tests, and examples.
 
 ## Why This Exists
 
@@ -38,7 +38,7 @@ Included:
 - local CLI
 - policy adapter interface
 - environment adapter interface
-- scenario and success-criteria models
+- scenario, ruleset, and success-criteria models
 - deterministic eval runner
 - state/action/outcome decision logs
 - transition logs with next state and terminal markers
@@ -48,6 +48,7 @@ Included:
 - policy-version comparison
 - regression and failure-case detection
 - JSONL, JSON, and Markdown report outputs
+- generic rule helpers for arbitrary robot domains
 
 Not included yet:
 
@@ -55,11 +56,12 @@ Not included yet:
 - hosted dashboard
 - Isaac/Gazebo/MuJoCo/ROS2 adapters
 - real robot capture integrations
-- public demo example package
+- packaged example distribution
 
 ## SDK v1 Docs
 
 - [Overview](docs/v1/overview.md)
+- [Generic Rules](docs/v1/generic-rules.md)
 - [Environment Adapter](docs/v1/environment-adapter.md)
 - [Policy Adapter](docs/v1/policy-adapter.md)
 - [Reports](docs/v1/reports.md)
@@ -74,70 +76,91 @@ From the repository root:
 python3 -m pip install -e .
 ```
 
+## Quickstart Demo
+
+Clone the repo and run the local demo:
+
+```bash
+python3 demo.py
+```
+
+This runs three dependency-free eval suites under `examples/generic_robots/`:
+
+- robot arm/gripper
+- drone inspection
+- factory welding process
+
+Reports are written to:
+
+```text
+runs/demo/robot_arm/report.md
+runs/demo/drone/report.md
+runs/demo/factory/report.md
+```
+
 ## SDK Usage
 
 ```python
-from robot_policy_eval import EvalRunner, Scenario, SuccessCriteria
+from robot_policy_eval import EvalRunner, Ruleset, Scenario, forbid_failure, max_steps, require_outcome
 
 
 def policy_v1(state):
-    return {"action": "move_forward", "debug_info": {"version": "policy_v1"}}
+    return {"action": "move_arm_down", "debug_info": {"version": "policy_v1"}}
 
 
 def policy_v2(state):
     return {
-        "action": "turn_right",
-        "probabilities": {"turn_right": 0.8, "move_forward": 0.2},
+        "action": "close_gripper",
+        "probabilities": {"close_gripper": 0.8, "move_arm_down": 0.2},
         "model_version": "policy_v2",
     }
 
 
 scenarios = [
     Scenario(
-        name="open_path",
+        name="grasp_cube",
         initial_state={
-            "front_distance": 80,
-            "left_distance": 45,
-            "right_distance": 45,
-            "goal_direction": "forward",
-            "previous_action": "none",
-            "step_count": 0,
+            "object_pose": "center",
+            "gripper_closed": False,
+            "has_object": False,
         },
         max_steps=6,
-        metadata={"required_forward_steps": 2, "scenario_type": "navigation", "tags": ["smoke"]},
+        metadata={"scenario_type": "robot_arm", "tags": ["grasp"]},
     )
 ]
 
+# `my_robot_env` implements reset(scenario) and step(action, scenario).
 report = EvalRunner(
     policies=[policy_v1, policy_v2],
     scenarios=scenarios,
-    success_criteria=SuccessCriteria(),
+    ruleset=Ruleset([
+        require_outcome("object_grasped"),
+        forbid_failure("dropped_object"),
+        max_steps(6),
+    ]),
     baseline_policy="policy_v1",
+    environment=my_robot_env,
 ).run()
 
 report.save("runs/latest")
 ```
 
-## Custom Rules
+## Generic Rules
 
-`SuccessCriteria` includes built-in checks for goal reached, collision, stuck, and unsafe forward actions. You can add custom rules when your policy has domain-specific constraints.
+`Ruleset` is the recommended generic API. It works for mobile robots, robot arms, drones, factory robots, and policies with arbitrary action/state names.
 
 ```python
-from robot_policy_eval import RuleResult, SuccessCriteria
+from robot_policy_eval import Ruleset, forbid_failure, require_metric, require_outcome
 
 
-def max_three_steps(logs, terminal_outcome):
-    passed = len(logs) <= 3
-    return RuleResult(
-        name="max_three_steps",
-        passed=passed,
-        reason="" if passed else "episode took more than 3 steps",
-        step=3 if not passed else None,
-    )
-
-
-criteria = SuccessCriteria(custom_rules=[max_three_steps])
+arm_rules = Ruleset([
+    require_outcome("object_grasped"),
+    forbid_failure("dropped_object"),
+    require_metric("grip_force", "<=", 0.9),
+])
 ```
+
+`SuccessCriteria()` still exists as a backward-compatible mobile-navigation preset.
 
 ## CLI Usage
 
@@ -151,6 +174,17 @@ If installed locally, it is also available as:
 
 ```bash
 robot-policy-eval run path/to/eval_config.json
+```
+
+Config files can optionally provide a custom environment:
+
+```json
+{
+  "environment": {
+    "path": "my_robot.envs:make_eval_environment",
+    "kwargs": {"seed": 7}
+  }
+}
 ```
 
 The CLI writes:
@@ -184,7 +218,6 @@ runs/latest/report.md
 - policy summaries
 - success rates
 - failure counts
-- collision/stuck/unsafe-action counts
 - average steps
 - rule results per episode
 - first failure step
@@ -194,6 +227,7 @@ runs/latest/report.md
 - first action divergences against baseline
 - grouped metrics by `scenario_type` and `tags`
 - human-readable highlights
+- outcome counts and metric summaries
 
 `report.md` is the human-readable summary. It includes run metadata, highlights, policy summaries, regressions, improvements, failure explanations, action divergences, and scenario groups.
 
@@ -206,6 +240,28 @@ Policy debug info can include standard ML fields such as:
 - `model_version`
 
 These are preserved in decision logs and failure cases so trained-model behavior is easier to inspect.
+
+Policy actions are generic. String actions like `move_forward` work, and so do continuous/vector actions such as lists, tuples, arrays, or tensor-like objects. The SDK passes the raw action to the environment and serializes a JSON-safe copy in reports.
+
+## Examples
+
+Run the one-command demo:
+
+```bash
+python3 demo.py
+```
+
+Run generic any-robot examples:
+
+```bash
+python3 examples/generic_robots/run_eval.py
+```
+
+Run the config-based mobile demo:
+
+```bash
+python3 -m robot_policy_eval run examples/configs/eval_config.json --output-dir runs/demo_robot
+```
 
 ## Development
 
