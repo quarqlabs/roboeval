@@ -31,7 +31,7 @@ from tests.fixtures.scenarios import fixture_scenarios
 ROOT = Path(__file__).resolve().parents[1]
 
 
-class RobotEvalsSdkTest(unittest.TestCase):
+class RoboEvalSdkTest(unittest.TestCase):
     def test_import_based_sdk_usage_runs_without_cli(self) -> None:
         report = EvalRunner(
             policies=[baseline_policy, regressing_policy],

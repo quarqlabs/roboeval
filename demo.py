@@ -4,7 +4,7 @@ RoboEval quick demo
 Three policies, three scenarios, one structured report.
 
 Run:
-    python3.11 demo.py
+    python3 demo.py
 """
 from pathlib import Path
 

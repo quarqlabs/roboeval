@@ -6,8 +6,34 @@ build-backend = "setuptools.build_meta"
 name = "roboeval"
 version = "0.1.0"
 description = "Local SDK for robot policy evaluation, failure analysis, and regression reports."
+readme = "README.md"
+license = { text = "Apache-2.0" }
 requires-python = ">=3.11"
 dependencies = []
+keywords = ["robotics", "evaluation", "policy", "testing", "simulation", "machine-learning"]
+classifiers = [
+    "Development Status :: 4 - Beta",
+    "Intended Audience :: Developers",
+    "Intended Audience :: Science/Research",
+    "License :: OSI Approved :: Apache Software License",
+    "Operating System :: OS Independent",
+    "Programming Language :: Python :: 3",
+    "Programming Language :: Python :: 3.11",
+    "Programming Language :: Python :: 3.12",
+    "Topic :: Scientific/Engineering :: Artificial Intelligence",
+    "Topic :: Software Development :: Testing",
+    "Typing :: Typed",
+]
+
+[project.optional-dependencies]
+trained = ["torch>=2.0"]
+dev = ["pytest>=7.0", "ruff>=0.4"]
+
+[project.urls]
+Homepage = "https://github.com/quarq/roboeval"
+Repository = "https://github.com/quarq/roboeval"
+"Bug Tracker" = "https://github.com/quarq/roboeval/issues"
+Documentation = "https://github.com/quarq/roboeval/tree/main/docs"
 
 [project.scripts]
 roboeval = "roboeval.cli:main"
