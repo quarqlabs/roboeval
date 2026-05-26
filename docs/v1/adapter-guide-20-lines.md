@@ -3,7 +3,7 @@
 This is the smallest shape of a custom environment and policy.
 
 ```python
-from robot_policy_eval import EvalRunner, Scenario, StepOutcome, SuccessCriteria
+from roboeval import EvalRunner, Scenario, StepOutcome, SuccessCriteria
 
 
 class MyEnv:

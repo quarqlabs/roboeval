@@ -3,14 +3,14 @@ requires = ["setuptools>=68"]
 build-backend = "setuptools.build_meta"
 
 [project]
-name = "robot-policy-eval"
+name = "roboeval"
 version = "0.1.0"
 description = "Local SDK for robot policy evaluation, failure analysis, and regression reports."
 requires-python = ">=3.11"
 dependencies = []
 
 [project.scripts]
-robot-policy-eval = "robot_policy_eval.cli:main"
+roboeval = "roboeval.cli:main"
 
 [tool.setuptools.packages.find]
-include = ["robot_policy_eval*"]
+include = ["roboeval*"]

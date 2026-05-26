@@ -9,7 +9,7 @@ That world can be our demo environment, a Python simulator, a wrapped robotics s
 An environment must implement:
 
 ```python
-from robot_policy_eval import Scenario, StepOutcome
+from roboeval import Scenario, StepOutcome
 
 
 class MyEnvironment:

@@ -8,7 +8,7 @@ from typing import Any, Callable
 
 Action = Any
 State = dict[str, Any]
-SDK_NAME = "robot-policy-eval"
+SDK_NAME = "roboeval"
 SDK_VERSION = "0.1.0"
 
 
@@ -404,7 +404,7 @@ class EvalReport:
 
     def to_markdown(self) -> str:
         lines = [
-            "# Robot Policy Eval Report",
+            "# Roboeval Report",
             "",
             "## Run Metadata",
             "",

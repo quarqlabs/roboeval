@@ -1,6 +1,6 @@
 from __future__ import annotations
 
-from robot_policy_eval import Scenario
+from roboeval import Scenario
 
 
 def fixture_scenarios() -> list[Scenario]:

@@ -1,6 +1,6 @@
-# Robot Policy Eval
+# roboeval
 
-`robot-policy-eval` is a local Python SDK for running repeatable evaluations on robot policy versions.
+`roboeval` is a local Python SDK for running repeatable evaluations on robot policy versions.
 
 The SDK is designed for teams that already have their own policies, scenarios, simulators, and robot repositories. Version 1 focuses on the local workflow: plug in policies, define scenarios and success criteria, run evals, and get structured results back.
 
@@ -84,24 +84,21 @@ Clone the repo and run the local demo:
 python3 demo.py
 ```
 
-This runs three dependency-free eval suites under `examples/generic_robots/`:
+This runs three policies against three scenarios and prints a structured report to the terminal.
 
-- robot arm/gripper
-- drone inspection
-- factory welding process
-
-Reports are written to:
+The report is also saved to:
 
 ```text
-runs/demo/robot_arm/report.md
-runs/demo/drone/report.md
-runs/demo/factory/report.md
+runs/demo/report.md
+runs/demo/comparison_report.json
+runs/demo/decision_logs.jsonl
+runs/demo/episode_results.json
 ```
 
 ## SDK Usage
 
 ```python
-from robot_policy_eval import EvalRunner, Ruleset, Scenario, forbid_failure, max_steps, require_outcome
+from roboeval import EvalRunner, Ruleset, Scenario, forbid_failure, max_steps, require_outcome
 
 
 def policy_v1(state):
@@ -150,7 +147,7 @@ report.save("runs/latest")
 `Ruleset` is the recommended generic API. It works for mobile robots, robot arms, drones, factory robots, and policies with arbitrary action/state names.
 
 ```python
-from robot_policy_eval import Ruleset, forbid_failure, require_metric, require_outcome
+from roboeval import Ruleset, forbid_failure, require_metric, require_outcome
 
 
 arm_rules = Ruleset([
@@ -167,13 +164,13 @@ arm_rules = Ruleset([
 The CLI is available as a module:
 
 ```bash
-python3 -m robot_policy_eval run path/to/eval_config.json
+python3 -m roboeval run path/to/eval_config.json
 ```
 
 If installed locally, it is also available as:
 
 ```bash
-robot-policy-eval run path/to/eval_config.json
+roboeval run path/to/eval_config.json
 ```
 
 Config files can optionally provide a custom environment:
@@ -245,22 +242,16 @@ Policy actions are generic. String actions like `move_forward` work, and so do c
 
 ## Examples
 
-Run the one-command demo:
+Run the demo:
 
 ```bash
 python3 demo.py
 ```
 
-Run generic any-robot examples:
+Run evals via the CLI with a config file:
 
 ```bash
-python3 examples/generic_robots/run_eval.py
-```
-
-Run the config-based mobile demo:
-
-```bash
-python3 -m robot_policy_eval run examples/configs/eval_config.json --output-dir runs/demo_robot
+python3 -m roboeval run path/to/eval_config.json --output-dir runs/my_eval
 ```
 
 ## Development
@@ -274,7 +265,7 @@ python3 -m unittest discover -s tests
 Run the package CLI:
 
 ```bash
-python3 -m robot_policy_eval --help
+python3 -m roboeval --help
 ```
 
 ## Roadmap

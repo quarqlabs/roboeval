@@ -7,8 +7,8 @@ import tempfile
 import unittest
 from pathlib import Path
 
-from robot_policy_eval import EvalRunner, SuccessCriteria, load_eval_config
-from robot_policy_eval.loaders import load_scenarios_csv, load_scenarios_json
+from roboeval import EvalRunner, SuccessCriteria, load_eval_config
+from roboeval.loaders import load_scenarios_csv, load_scenarios_json
 from tests.fixtures.policies import baseline_policy, regressing_policy
 from tests.fixtures.scenarios import fixture_scenarios
 
@@ -97,7 +97,7 @@ class RobotEvalsSdkTest(unittest.TestCase):
                 [
                     sys.executable,
                     "-m",
-                    "robot_policy_eval",
+                    "roboeval",
                     "run",
                     str(config_path),
                     "--output-dir",
