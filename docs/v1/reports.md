@@ -27,6 +27,11 @@ runs/latest/report.md
 
 This is the lowest-level debugging file.
 
+The environment receives the raw policy action, but report files store a
+JSON-safe copy. Strings remain strings. Lists, tuples, dicts, dataclasses,
+numpy-like arrays, and tensor-like objects are converted into serializable
+values; unknown objects fall back to `repr(...)`.
+
 ## Episode Results
 
 `episode_results.json` contains each full episode with logs, rule results, first failure step, and scenario metadata.
@@ -44,7 +49,12 @@ Use this when you want to inspect one policy on one scenario.
 - failure cases
 - action divergences
 - grouped metrics
+- outcome counts
+- metric summaries
 - human-readable highlights
+
+Action divergences include both serialized action values and stable action keys
+so non-string actions can still be compared across policy versions.
 
 Run metadata includes:
 
@@ -66,8 +76,7 @@ It starts with run metadata and highlights, then shows metrics and deeper debug 
 Example highlight:
 
 ```text
-policy_v4_trained improved dead_end_reverse_needed; baseline policy_v1_cautious failed with unsafe_forward_action.
-policy_v1_cautious moved forward unsafely on dead_end_reverse_needed at step 0.
-policy_v4_trained reversed, escaped, then reached goal on dead_end_reverse_needed.
+arm_policy_v2 improved grasp_cube; baseline arm_policy_v1 failed rule object_grasped.
+arm_policy_v2 outcome trace: object_aligned -> object_grasped.
+arm_policy_v2 chose close_gripper while baseline chose move_arm_down at step 1.
 ```
-

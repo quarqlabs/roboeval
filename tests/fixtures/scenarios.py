@@ -16,6 +16,6 @@ def fixture_scenarios() -> list[Scenario]:
                 "step_count": 0,
             },
             max_steps=6,
-            metadata={"required_forward_steps": 2},
+            metadata={"required_forward_steps": 2, "scenario_type": "open_path", "tags": ["smoke"]},
         )
     ]

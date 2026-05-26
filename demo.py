@@ -1,5 +1,5 @@
 """
-robot-policy-eval — quick demo
+RoboEval quick demo
 
 Three policies, three scenarios, one structured report.
 

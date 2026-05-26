@@ -1,0 +1,36 @@
+{
+  "model_version": "policy_v4_trained",
+  "model_type": "pytorch_mlp_classifier",
+  "input_dim": 13,
+  "hidden_dim": 32,
+  "output_dim": 5,
+  "actions": [
+    "move_forward",
+    "turn_left",
+    "turn_right",
+    "stop",
+    "reverse"
+  ],
+  "feature_names": [
+    "front_distance_norm",
+    "left_distance_norm",
+    "right_distance_norm",
+    "step_count_norm",
+    "goal_forward",
+    "goal_left",
+    "goal_right",
+    "previous_none",
+    "previous_move_forward",
+    "previous_turn_left",
+    "previous_turn_right",
+    "previous_stop",
+    "previous_reverse"
+  ],
+  "train_rows": 1200,
+  "val_rows": 300,
+  "epochs": 180,
+  "train_accuracy": 0.9733333587646484,
+  "val_accuracy": 0.9433333277702332,
+  "raw_data_path": "examples/trained_policy/data/synthetic_policy_data.csv",
+  "clean_data_path": "examples/trained_policy/data/clean_policy_data.csv"
+}

@@ -1,0 +1,40 @@
+{
+  "baseline_policy": "policy_v1_cautious",
+  "policies": [
+    {
+      "name": "policy_v0_rules",
+      "path": "examples.demo_robot.policies:policy_v0_rules"
+    },
+    {
+      "name": "policy_v1_cautious",
+      "path": "examples.demo_robot.policies:policy_v1_cautious"
+    },
+    {
+      "name": "policy_v2_aggressive",
+      "path": "examples.demo_robot.policies:policy_v2_aggressive"
+    },
+    {
+      "name": "policy_v3_balanced",
+      "path": "examples.demo_robot.policies:policy_v3_balanced"
+    },
+    {
+      "name": "policy_v4_noisy",
+      "path": "examples.demo_robot.policies:policy_v4_noisy"
+    }
+  ],
+  "scenario_sources": [
+    {
+      "type": "python",
+      "path": "examples.demo_robot.scenarios:get_python_scenarios"
+    },
+    {
+      "type": "json",
+      "path": "../scenarios/scenarios.json"
+    },
+    {
+      "type": "csv",
+      "path": "../scenarios/scenarios.csv"
+    }
+  ],
+  "success_criteria": "../criteria/safety_criteria.json"
+}

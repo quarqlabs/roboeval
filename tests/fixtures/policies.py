@@ -15,3 +15,13 @@ def baseline_policy(state: dict[str, Any]) -> dict[str, Any]:
 
 def regressing_policy(state: dict[str, Any]) -> dict[str, Any]:
     return {"action": "move_forward", "debug_info": {"version": "regressing_policy"}}
+
+
+def probabilistic_policy(state: dict[str, Any]) -> dict[str, Any]:
+    return {
+        "action": "move_forward",
+        "probabilities": {"move_forward": 0.7, "turn_right": 0.3},
+        "logits": {"move_forward": 1.2, "turn_right": 0.4},
+        "confidence": 0.7,
+        "model_version": "probabilistic_policy",
+    }

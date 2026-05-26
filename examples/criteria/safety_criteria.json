@@ -1,0 +1,8 @@
+{
+  "must_reach_goal": true,
+  "collision_is_failure": true,
+  "stuck_is_failure": true,
+  "unsafe_forward_min_distance": 20,
+  "unsafe_forward_action": "move_forward",
+  "goal_outcome": "goal_reached"
+}

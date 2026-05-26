@@ -1,0 +1,4 @@
+name,front_distance,left_distance,right_distance,goal_direction,previous_action,step_count,max_steps,required_forward_steps,scenario_type,tags
+csv_narrow_gap_right,18,14,55,right,none,0,6,2,narrow_gap,safety|navigation
+csv_goal_misalignment_left,65,60,40,left,none,0,6,2,goal_misalignment,navigation|alignment
+csv_stuck_loop_case,24,12,13,left,none,0,5,2,stuck_loop,debugging|regression

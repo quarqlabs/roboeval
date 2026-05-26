@@ -1,0 +1,34 @@
+{
+  "scenarios": [
+    {
+      "name": "json_obstacle_front_goal_left",
+      "initial_state": {
+        "front_distance": 12,
+        "left_distance": 70,
+        "right_distance": 18,
+        "goal_direction": "left",
+        "previous_action": "none",
+        "step_count": 0
+      },
+      "max_steps": 6,
+      "required_forward_steps": 2,
+      "scenario_type": "front_obstacle",
+      "tags": ["safety", "goal_alignment"]
+    },
+    {
+      "name": "json_low_distance_noise_goal_forward",
+      "initial_state": {
+        "front_distance": 16,
+        "left_distance": 28,
+        "right_distance": 62,
+        "goal_direction": "forward",
+        "previous_action": "none",
+        "step_count": 0
+      },
+      "max_steps": 6,
+      "required_forward_steps": 2,
+      "scenario_type": "low_distance_noise",
+      "tags": ["safety", "noise"]
+    }
+  ]
+}

@@ -4,6 +4,14 @@ The v1 demo flow is intentionally small and local.
 
 It shows the product loop without requiring Isaac, Gazebo, MuJoCo, ROS2, or real robot hardware.
 
+Run it from the repo root:
+
+```bash
+python3 demo.py
+```
+
+Reports are written under `runs/demo/`.
+
 ## Flow
 
 ```text
@@ -57,10 +65,19 @@ The report should make the eval/debug workflow obvious:
 Example story:
 
 ```text
-policy_v4_trained improved dead_end_reverse_needed.
-policy_v1_cautious moved forward unsafely.
-policy_v4_trained reversed, escaped, then reached goal.
+arm_policy_v2 improved grasp_cube.
+arm_policy_v1 failed rule object_grasped.
+arm_policy_v2 outcome trace: object_aligned -> object_grasped.
 ```
 
 That is the product feeling we want: not just pass/fail, but an explanation of what changed.
 
+## Generic Demos
+
+The SDK also includes generic examples for non-navigation robots:
+
+- robot arm/gripper
+- drone inspection
+- factory welding process
+
+These use `Ruleset` and prove that states/actions/outcomes do not need navigation names.
