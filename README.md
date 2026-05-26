@@ -242,16 +242,128 @@ Policy actions are generic. String actions like `move_forward` work, and so do c
 
 ## Examples
 
-Run the demo:
+This repo includes demo workloads across four robot domains:
+
+- mobile navigation robot
+- robot arm / gripper
+- drone inspection robot
+- factory welding/process robot
+
+The examples are designed to show the same SDK flow across different state,
+action, outcome, metric, and rule shapes.
+
+### Quick Demo
+
+Run the small mobile navigation demo:
 
 ```bash
 python3 demo.py
 ```
 
+This runs:
+
+```text
+3 policies x 3 scenarios = 9 eval episodes
+```
+
+### Generic Robot Demo
+
+Run the larger any-robot demo:
+
+```bash
+python3 demo2.py
+```
+
+This runs three robot domains:
+
+| Robot domain | Policies | Scenarios | Rules | Eval episodes |
+| --- | ---: | ---: | ---: | ---: |
+| robot arm / gripper | 4 | 5 | 7 | 20 |
+| drone inspection | 4 | 5 | 7 | 20 |
+| factory welding/process | 4 | 5 | 7 | 20 |
+
+Generic robot total:
+
+```text
+3 robot domains
+12 policies
+15 scenarios
+21 rules
+60 eval episodes
+```
+
+The generic demo writes reports under:
+
+```text
+runs/demo/robot_arm/report.md
+runs/demo/drone/report.md
+runs/demo/factory/report.md
+```
+
+### Config-Based Mobile Demo
+
 Run evals via the CLI with a config file:
 
 ```bash
-python3 -m roboeval run path/to/eval_config.json --output-dir runs/my_eval
+python3 -m roboeval run examples/configs/eval_config.json --output-dir runs/demo_robot
+```
+
+This mobile robot demo loads scenarios from Python, JSON, and CSV:
+
+```text
+5 policies x 7 scenarios = 35 eval episodes
+```
+
+It uses `SuccessCriteria` with checks for:
+
+- goal reached
+- collision failure
+- stuck failure
+- unsafe forward action below the safe distance
+
+### Trained Policy Demo
+
+The trained-policy example adds a real saved PyTorch policy wrapper:
+
+```bash
+python3 examples/trained_policy/run_eval.py
+```
+
+This runs:
+
+```text
+4 policies x 2 scenarios = 8 eval episodes
+```
+
+The trained model uses:
+
+```text
+1500 synthetic training rows
+1200 train rows
+300 validation rows
+13 input features
+5 output actions
+~94% validation accuracy
+```
+
+### Demo Coverage Summary
+
+Main runnable demo workload:
+
+| Area | Robot domain | Eval episodes |
+| --- | --- | ---: |
+| `demo.py` | mobile navigation | 9 |
+| `examples/demo_robot` | mobile navigation | 35 |
+| `examples/trained_policy` | mobile navigation + trained model | 8 |
+| `demo2.py` / `examples/generic_robots` | arm, drone, factory | 60 |
+
+Total main demo coverage:
+
+```text
+4 robot domains
+24 policy entries across demos
+27 scenario entries across demos
+112 eval episodes
 ```
 
 ## Development
@@ -272,7 +384,6 @@ python3 -m roboeval --help
 
 Near-term:
 
-- publish demo examples
 - improve config ergonomics
 - add richer failure explanations
 - add more report formats
