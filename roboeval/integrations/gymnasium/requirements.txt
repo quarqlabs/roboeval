@@ -1,0 +1,12 @@
+# Gymnasium integration dependency.
+#
+# The roboeval core stays dependency-free. Installing this integration's
+# requirement separately keeps the base `pip install roboeval` lightweight.
+#
+# Once the SDK exposes `pip install roboeval[gymnasium]`, this file is for
+# reference only — the extras line in pyproject.toml becomes authoritative.
+#
+# Why >=0.29: that release stabilized the 5-tuple step return
+# (observation, reward, terminated, truncated, info) this adapter relies on.
+
+gymnasium>=0.29
