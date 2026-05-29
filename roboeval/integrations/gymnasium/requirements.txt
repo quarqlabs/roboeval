@@ -3,8 +3,8 @@
 # The roboeval core stays dependency-free. Installing this integration's
 # requirement separately keeps the base `pip install roboeval` lightweight.
 #
-# Once the SDK exposes `pip install roboeval[gymnasium]`, this file is for
-# reference only — the extras line in pyproject.toml becomes authoritative.
+# `pip install roboeval[gymnasium]` is the authoritative install path. This
+# file stays as a local reference for people working directly in this folder.
 #
 # Why >=0.29: that release stabilized the 5-tuple step return
 # (observation, reward, terminated, truncated, info) this adapter relies on.

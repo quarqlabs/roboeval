@@ -15,7 +15,7 @@ pip install roboeval[mujoco]        # adds MuJoCo adapter (planned)
 pip install roboeval[pybullet]      # adds PyBullet adapter (planned)
 ```
 
-Until those extras are wired into `pyproject.toml`, each integration folder ships its own `requirements.txt` so users can install the underlying dependency directly.
+Each integration folder also ships its own `requirements.txt` as a local reference, but the package extras in `pyproject.toml` are the authoritative install path.
 
 ## Current integrations
 

@@ -99,16 +99,10 @@ In all cases, namespace framework-specific extras under `info["<framework>"]` to
 
 ## 12. Follow-up items for the team
 
-1. **`pyproject.toml` extras line.** Add to `[project.optional-dependencies]`:
-   ```toml
-   gymnasium = ["gymnasium>=0.29"]
-   ```
-   So `pip install roboeval[gymnasium]` installs both the core and the underlying dependency. The integration folder is already in the SDK's package-find glob (`include = ["roboeval*"]`), so the import path works without further changes. Held out of this spike per the "don't modify pyproject.toml" constraint.
+1. **`artifacts` field.** The adapter does not currently populate `StepOutcome.artifacts`. A natural extension is capturing rendered frames when `env.render_mode == "rgb_array"`, stored either as numpy arrays or PNG paths. Best surfaced via an `artifacts_from_step` hook.
 
-2. **`artifacts` field.** The adapter does not currently populate `StepOutcome.artifacts`. A natural extension is capturing rendered frames when `env.render_mode == "rgb_array"`, stored either as numpy arrays or PNG paths. Best surfaced via an `artifacts_from_step` hook.
+2. **`VectorEnv` support.** Refused at construction today. When the SDK runner gains batched execution, drop the `__post_init__` check and add per-env state tracking for the running `episode_return`.
 
-3. **`VectorEnv` support.** Refused at construction today. When the SDK runner gains batched execution, drop the `__post_init__` check and add per-env state tracking for the running `episode_return`.
+3. **Multiple integrations sharing a base.** When the next adapter ships (MuJoCo or PyBullet), evaluate whether common patterns warrant a shared `_BaseIntegrationAdapter` or a shared `info_keys` / `events_from_step` helper module. Premature today.
 
-4. **Multiple integrations sharing a base.** When the next adapter ships (MuJoCo or PyBullet), evaluate whether common patterns warrant a shared `_BaseIntegrationAdapter` or a shared `info_keys` / `events_from_step` helper module. Premature today.
-
-5. **Seed re-seeding semantics.** Gymnasium re-seeds the underlying RNG only when `seed` is non-None on `reset()`. The adapter forwards whatever `seed_from_scenario` returns, so a scenario with no `seed` lets the env continue its current RNG state across resets — which can produce non-reproducible episodes. Document explicitly that scenarios should always specify a seed for reproducibility.
+4. **Seed re-seeding semantics.** Gymnasium re-seeds the underlying RNG only when `seed` is non-None on `reset()`. The adapter forwards whatever `seed_from_scenario` returns, so a scenario with no `seed` lets the env continue its current RNG state across resets — which can produce non-reproducible episodes. Document explicitly that scenarios should always specify a seed for reproducibility.

@@ -7,10 +7,11 @@ Wrap any [Gymnasium](https://gymnasium.farama.org/) environment as a roboeval `E
 This integration is shipped inside the `roboeval` package but Gymnasium itself is an optional dependency.
 
 ```bash
-pip install gymnasium>=0.29
+pip install "roboeval[gymnasium]"
 ```
 
-(See `requirements.txt` in this folder. A future SDK release may expose this as `pip install roboeval[gymnasium]`.)
+For local spike work inside this repository, `requirements.txt` in this folder
+also lists the direct Gymnasium dependency.
 
 ## Quick start
 
