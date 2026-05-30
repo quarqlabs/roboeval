@@ -11,7 +11,7 @@ The longer-term distribution model is optional extras:
 ```bash
 pip install roboeval                # core only
 pip install roboeval[gymnasium]     # adds Gymnasium adapter
-pip install roboeval[mujoco]        # adds MuJoCo adapter (planned)
+pip install roboeval[mujoco]        # adds raw MuJoCo adapter
 pip install roboeval[pybullet]      # adds PyBullet adapter (planned)
 ```
 
@@ -22,6 +22,7 @@ Each integration folder also ships its own `requirements.txt` as a local referen
 | Folder | Wraps | Status |
 |--------|-------|--------|
 | `gymnasium/` | Any `gymnasium.Env` | Spike (single-env, no vector support, no render-frame capture) |
+| `mujoco/` | Raw MuJoCo `MjModel` / `MjData` XML worlds | Spike (single-model, no render-frame capture) |
 
 ## Template for new integrations
 

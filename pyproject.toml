@@ -27,6 +27,7 @@ classifiers = [
 
 [project.optional-dependencies]
 gymnasium = ["gymnasium>=0.29"]
+mujoco = ["mujoco>=3.2"]
 trained = ["torch>=2.0"]
 dev = ["pytest>=7.0", "ruff>=0.4"]
 
@@ -41,3 +42,6 @@ roboeval = "roboeval.cli:main"
 
 [tool.setuptools.packages.find]
 include = ["roboeval*"]
+
+[tool.setuptools.package-data]
+"roboeval.integrations.mujoco" = ["assets/*.xml"]

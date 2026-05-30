@@ -54,7 +54,7 @@ Not included yet:
 
 - GitHub Actions integration
 - hosted dashboard
-- Isaac/Gazebo/MuJoCo/ROS2 adapters
+- Isaac/Gazebo/ROS2 adapters
 - real robot capture integrations
 - packaged example distribution
 
@@ -240,6 +240,20 @@ These are preserved in decision logs and failure cases so trained-model behavior
 
 Policy actions are generic. String actions like `move_forward` work, and so do continuous/vector actions such as lists, tuples, arrays, or tensor-like objects. The SDK passes the raw action to the environment and serializes a JSON-safe copy in reports.
 
+## Optional Simulator Integrations
+
+The core SDK stays dependency-free. Simulator adapters are optional extras:
+
+```bash
+pip install "roboeval[gymnasium]"
+pip install "roboeval[mujoco]"
+```
+
+- `roboeval.integrations.gymnasium` wraps any single `gymnasium.Env`.
+- `roboeval.integrations.mujoco` wraps raw official MuJoCo `MjModel` / `MjData` XML worlds.
+
+MuJoCo integration uses the official `mujoco` package, not `mujoco-py`. Gymnasium MuJoCo environments should use the Gymnasium adapter.
+
 ## Examples
 
 This repo includes demo workloads across four robot domains:
@@ -392,4 +406,4 @@ Later:
 
 - GitHub Actions integration
 - hosted eval history and dashboards
-- simulator adapters for Isaac, Gazebo, MuJoCo, and ROS2 workflows
+- simulator adapters for Isaac, Gazebo, and ROS2 workflows
