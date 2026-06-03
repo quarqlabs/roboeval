@@ -1,0 +1,33 @@
+# Isaac Lab integration dependencies.
+#
+# This file is informational. Isaac Sim and Isaac Lab are NOT pip-installable
+# in a single line — they require NVIDIA GPU + Linux/Windows + Isaac Sim
+# install + Isaac Lab build. See README.md for the workflow.
+#
+# What our adapter directly requires from Python land:
+
+gymnasium>=0.29
+torch>=2.0
+
+# Isaac Lab itself follows NVIDIA's install path:
+#   https://isaac-sim.github.io/IsaacLab/main/source/setup/installation/index.html
+#
+# Typical sequence on a cloud GPU box (RunPod / Lambda Labs / etc.):
+#
+#   1. Install Isaac Sim (NVIDIA's pip-installer path, fastest):
+#       pip install isaacsim==4.5.* --extra-index-url https://pypi.nvidia.com
+#
+#   2. Clone + install Isaac Lab:
+#       git clone https://github.com/isaac-sim/IsaacLab.git
+#       cd IsaacLab
+#       ./isaaclab.sh --install
+#
+#   3. Verify:
+#       ./isaaclab.sh -p scripts/environments/list_envs.py
+#
+#   4. Install roboeval and the Isaac integration extras:
+#       pip install -e <path-to-roboeval>
+#       # (no extra pip step for the Isaac integration; the adapter is in-tree)
+#
+# CUDA: Isaac Sim 4.5 currently expects CUDA 11.8 or 12.x. Pin per the
+# Isaac Lab release notes for the version you install.
