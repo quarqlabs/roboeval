@@ -36,8 +36,10 @@ from .adapter import (
     default_seed_from_scenario,
     tensor_to_numpy,
 )
+from .batched_adapter import BatchedIsaacEnvironmentAdapter
 
 __all__ = [
+    "BatchedIsaacEnvironmentAdapter",
     "IsaacEnvironmentAdapter",
     "default_action_from_decision",
     "default_events_from_step",
