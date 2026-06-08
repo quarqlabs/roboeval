@@ -13,15 +13,20 @@ from .policy import (
     from_single,
     normalize_batched_policy,
 )
+from .runner import BatchedEvalRunner
+from .scheduler import SlotScheduler, SlotTask
 from .types import BatchedState, BatchedStepOutcome
 
 
 __all__ = [
     "BatchedEnvironmentAdapter",
+    "BatchedEvalRunner",
     "BatchedPolicy",
     "BatchedPolicyAdapter",
     "BatchedState",
     "BatchedStepOutcome",
+    "SlotScheduler",
+    "SlotTask",
     "from_single",
     "normalize_batched_policy",
 ]
