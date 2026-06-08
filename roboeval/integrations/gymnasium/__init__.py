@@ -13,8 +13,10 @@ from .adapter import (
     default_outcome_from_step,
     default_seed_from_scenario,
 )
+from .batched_adapter import BatchedGymnasiumEnvironmentAdapter
 
 __all__ = [
+    "BatchedGymnasiumEnvironmentAdapter",
     "GymnasiumEnvironmentAdapter",
     "default_action_from_decision",
     "default_events_from_step",
