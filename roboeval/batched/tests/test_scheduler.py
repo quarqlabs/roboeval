@@ -121,13 +121,17 @@ class TestSchedulerEndToEnd(unittest.TestCase):
         seen = ["a", "b", "c"]  # initial assignments
 
         # slot 2 finishes first
-        t = sched.complete_slot(2); seen.append(t.scenario.name)  # d
+        t = sched.complete_slot(2)
+        seen.append(t.scenario.name)  # d
         # slot 0 finishes
-        t = sched.complete_slot(0); seen.append(t.scenario.name)  # e
+        t = sched.complete_slot(0)
+        seen.append(t.scenario.name)  # e
         # slot 2 again
-        t = sched.complete_slot(2); seen.append(t.scenario.name)  # f
+        t = sched.complete_slot(2)
+        seen.append(t.scenario.name)  # f
         # slot 1 finishes
-        t = sched.complete_slot(1); seen.append(t.scenario.name)  # g
+        t = sched.complete_slot(1)
+        seen.append(t.scenario.name)  # g
 
         # Now queue empty. Remaining slot completions return None.
         self.assertIsNone(sched.complete_slot(2))
