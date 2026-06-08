@@ -76,25 +76,40 @@ From the repository root:
 python3 -m pip install -e .
 ```
 
-For a full development environment, use the setup script. It creates `.venv`,
-upgrades the packaging tools, and installs the SDK in editable mode with the
-development, Gymnasium, MuJoCo, and trained-policy extras:
+For a full development environment, use the cross-platform setup script. It
+creates `.venv`, upgrades the packaging tools, and installs the SDK in editable
+mode with the development, Gymnasium, MuJoCo, and trained-policy extras.
+
+Windows PowerShell:
+
+```powershell
+py -3 scripts\setup_env.py
+.\.venv\Scripts\Activate.ps1
+```
+
+macOS / Linux:
+
+```bash
+python3 scripts/setup_env.py
+source .venv/bin/activate
+```
+
+The shell wrapper also works on macOS / Linux:
 
 ```bash
 scripts/setup_env.sh
-source .venv/bin/activate
 ```
 
 For a core-only environment without optional simulator or training packages:
 
 ```bash
-scripts/setup_env.sh --minimal
+python3 scripts/setup_env.py --minimal
 ```
 
 You can also choose extras explicitly:
 
 ```bash
-scripts/setup_env.sh --extras dev,gymnasium
+python3 scripts/setup_env.py --extras dev,gymnasium
 ```
 
 ## Quickstart Demo
