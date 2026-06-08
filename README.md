@@ -76,6 +76,27 @@ From the repository root:
 python3 -m pip install -e .
 ```
 
+For a full development environment, use the setup script. It creates `.venv`,
+upgrades the packaging tools, and installs the SDK in editable mode with the
+development, Gymnasium, MuJoCo, and trained-policy extras:
+
+```bash
+scripts/setup_env.sh
+source .venv/bin/activate
+```
+
+For a core-only environment without optional simulator or training packages:
+
+```bash
+scripts/setup_env.sh --minimal
+```
+
+You can also choose extras explicitly:
+
+```bash
+scripts/setup_env.sh --extras dev,gymnasium
+```
+
 ## Quickstart Demo
 
 Clone the repo and run the local demo:
