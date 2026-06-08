@@ -24,6 +24,9 @@ Each integration folder also ships its own `requirements.txt` as a local referen
 | `gymnasium/` | Any `gymnasium.Env` | Spike (single-env, no vector support, no render-frame capture) |
 | `mujoco/` | Raw MuJoCo `MjModel` / `MjData` XML worlds | Spike (single-model, no render-frame capture) |
 
+Runnable example scenario data for both adapters lives in
+`examples/simulator_integrations/data/`.
+
 ## Template for new integrations
 
 Every integration folder should provide:
@@ -46,4 +49,4 @@ Each adapter should:
 - Reuse `roboeval.core.to_serializable` for JSON safety rather than reinventing it.
 - Namespace framework-specific raw data under `info["<framework>"]` (e.g. `info["gymnasium"]`, `info["mujoco"]`) so the SDK's `_metric_summary`, rules, and reports remain framework-agnostic.
 
-The Gymnasium adapter follows this template — use it as the reference.
+The Gymnasium and MuJoCo adapters follow this template — use them as references.

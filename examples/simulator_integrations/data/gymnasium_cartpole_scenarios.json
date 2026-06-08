@@ -1,0 +1,26 @@
+{
+  "scenarios": [
+    {
+      "name": "cartpole_seed_0_smoke",
+      "initial_state": {
+        "seed": 0
+      },
+      "max_steps": 40,
+      "metadata": {
+        "scenario_type": "gymnasium_cartpole",
+        "tags": ["gymnasium", "cartpole", "smoke"]
+      }
+    },
+    {
+      "name": "cartpole_seed_7_smoke",
+      "initial_state": {
+        "seed": 7
+      },
+      "max_steps": 40,
+      "metadata": {
+        "scenario_type": "gymnasium_cartpole",
+        "tags": ["gymnasium", "cartpole", "seeded"]
+      }
+    }
+  ]
+}

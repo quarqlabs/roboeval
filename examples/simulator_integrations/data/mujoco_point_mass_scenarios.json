@@ -1,0 +1,34 @@
+{
+  "scenarios": [
+    {
+      "name": "point_mass_reaches_half_meter",
+      "initial_state": {
+        "qpos": [0.0],
+        "qvel": [0.0],
+        "ctrl": [0.0]
+      },
+      "max_steps": 120,
+      "metadata": {
+        "scenario_type": "mujoco_point_mass",
+        "tags": ["mujoco", "point_mass", "goal"],
+        "target_qpos": 0.5,
+        "goal_tolerance": 0.035
+      }
+    },
+    {
+      "name": "point_mass_reaches_negative_target",
+      "initial_state": {
+        "qpos": [0.2],
+        "qvel": [0.0],
+        "ctrl": [0.0]
+      },
+      "max_steps": 140,
+      "metadata": {
+        "scenario_type": "mujoco_point_mass",
+        "tags": ["mujoco", "point_mass", "reverse"],
+        "target_qpos": -0.25,
+        "goal_tolerance": 0.035
+      }
+    }
+  ]
+}

@@ -71,3 +71,19 @@ cases:
 These examples use `Ruleset` instead of the navigation-specific
 `SuccessCriteria` preset, so they show how the same SDK can evaluate robots that
 do not share the mobile robot state/action names.
+
+## Optional Simulator Integrations
+
+Run these only after installing the matching optional extra:
+
+```bash
+pip install -e ".[gymnasium]"
+python3 examples/simulator_integrations/gymnasium_cartpole.py
+
+pip install -e ".[mujoco]"
+python3 examples/simulator_integrations/mujoco_point_mass.py
+```
+
+The scenario data lives in `examples/simulator_integrations/data/`. The
+Gymnasium example wraps `CartPole-v1`; the raw MuJoCo example loads the
+`point_mass.xml` asset from `roboeval.integrations.mujoco`.

@@ -25,16 +25,31 @@ decision logs + failures + regressions + report
 - Flags regressions, improvements, failure cases, and action divergences.
 - Generates JSONL, JSON, and Markdown reports.
 - Lets users provide their own policy and environment adapters through Python or CLI config.
+- Includes optional simulator adapters for Gymnasium and raw official MuJoCo XML worlds.
 
 ## What v1 Does Not Do Yet
 
 - No hosted dashboard.
 - No GitHub Actions integration.
-- No Isaac, Gazebo, MuJoCo, ROS2, or real robot capture adapter yet.
+- No Isaac, Gazebo, ROS2, or real robot capture adapter yet.
 - No automatic scenario generation yet.
 - No packaged example distribution yet.
 
-The goal of v1 is to prove the local eval loop first. Simulator integrations and hosted tracking can sit on top once the local contract is stable.
+The goal of v1 is to prove the local eval loop first. The Gymnasium and raw MuJoCo adapters are optional integration spikes that sit outside the dependency-free core SDK. Larger simulator integrations and hosted tracking can sit on top once the local contract is stable.
+
+## Optional Simulator Integrations
+
+The core install path has no simulator dependencies. Install only the adapter you need:
+
+```bash
+pip install "roboeval[gymnasium]"
+pip install "roboeval[mujoco]"
+```
+
+- `roboeval.integrations.gymnasium` wraps any single `gymnasium.Env`, including Gymnasium's own MuJoCo-backed environments.
+- `roboeval.integrations.mujoco` wraps raw official MuJoCo `MjModel` / `MjData` XML worlds.
+
+The MuJoCo adapter uses the official `mujoco` package, not `mujoco-py`. Example scenario data for both adapters lives in `examples/simulator_integrations/data/`.
 
 ## Main SDK Objects
 
